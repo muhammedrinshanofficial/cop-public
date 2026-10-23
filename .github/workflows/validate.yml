@@ -1,0 +1,31 @@
+name: validate
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+      ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+      ADMIN_PRINCIPAL_ID: ${{ secrets.ADMIN_PRINCIPAL_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Python syntax check
+        run: python -m compileall -q src/api
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Bicep what-if
+        run: az deployment sub what-if --location swedencentral --parameters infra/main.dev.bicepparam

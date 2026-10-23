@@ -1,0 +1,49 @@
+name: deploy-code
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/api/**'
+      - 'src/dashboard/**'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Python syntax check
+        run: python -m compileall -q src/api
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Install Core Tools
+        run: npm i -g azure-functions-core-tools@4 --unsafe-perm true
+      - name: Publish Function App
+        working-directory: src/api
+        run: func azure functionapp publish func-cop-api-dev-rkhmrb --python
+
+  dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy dashboard
+        run: |
+          TOKEN=$(az staticwebapp secrets list --name swa-cop-dashboard-dev --resource-group rg-cop-platform-dev --query properties.apiKey --output tsv)
+          echo "::add-mask::$TOKEN"
+          npx --yes @azure/static-web-apps-cli deploy src/dashboard --deployment-token "$TOKEN" --env production

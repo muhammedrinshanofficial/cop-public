@@ -1,0 +1,13 @@
+.azure/
+.env
+*.local
+local.settings.json
+node_modules/
+__pycache__/
+.venv/
+*.zip
+*.pem
+id_*
+*.key
+what-if*.txt
+.python_packages/

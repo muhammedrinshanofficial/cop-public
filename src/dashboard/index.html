@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud Operations Center</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0e13;--panel:#11151c;--panel2:#151a23;--line:#212835;--line2:#2c3544;--tx:#e7eaf0;--mu:#8b95a7;--fa:#5f6a7d;
+--ac:#5b8def;--acs:rgba(91,141,239,.14);--ok:#3dbb8c;--warn:#e3a43f;--err:#e5604f;--info:#7c93f5;--r:10px;
+--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased}
+.app{display:grid;grid-template-columns:244px minmax(0,1fr);min-height:100vh}
+aside{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--panel);padding:20px 12px 14px;display:flex;flex-direction:column}
+.brand{display:flex;gap:11px;align-items:center;padding:2px 10px 22px}
+.brand svg{flex:none}.brand b{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em}.brand small{color:var(--fa);font-size:12px}
+nav{flex:1;overflow:auto}
+.ng{padding:0 10px;margin:14px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--fa)}
+nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;margin:1px 0;border-radius:8px;color:var(--mu);text-decoration:none;font-weight:500;transition:background .15s,color .15s}
+nav a svg{width:17px;height:17px;flex:none}
+nav a:hover{background:var(--panel2);color:var(--tx)}
+nav a.on{background:var(--acs);color:#9db9f7}
+.me{display:flex;gap:10px;align-items:center;padding:12px 10px 2px;border-top:1px solid var(--line);margin-top:10px}
+.av{width:30px;height:30px;border-radius:50%;background:var(--acs);color:#9db9f7;display:grid;place-items:center;font-weight:600;font-size:13px;flex:none}
+.me div{min-width:0;flex:1}.me b{display:block;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me a{font-size:12px;color:var(--fa);text-decoration:none}.me a:hover{color:var(--tx)}
+main{padding:26px 34px 56px;max-width:1380px;width:100%}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-size:21px;font-weight:600;letter-spacing:-.02em}
+.ph p{color:var(--mu);font-size:13px;margin-top:2px}
+.ctl{display:flex;gap:10px;align-items:center}
+.upd{display:inline-flex;gap:8px;align-items:center;color:var(--mu);font-size:12px}
+.upd i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.btn{height:34px;padding:0 13px;border:1px solid var(--line2);border-radius:8px;background:var(--panel);color:var(--tx);cursor:pointer;display:inline-flex;gap:8px;align-items:center;font:inherit;font-weight:500;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--panel2);border-color:#3a4558}.btn svg{width:15px;height:15px}
+.btn.spin svg{animation:rot .9s linear infinite}
+.inp{height:34px;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:0 12px;color:var(--tx);font:inherit;transition:border-color .15s,box-shadow .15s}
+.inp:focus{outline:0;border-color:var(--ac);box-shadow:0 0 0 3px var(--acs)}
+select.inp{appearance:none;padding-right:32px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%238b95a7' stroke-width='2'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+select.inp option{background:#151a23;color:var(--tx)}
+.srch{position:relative}.srch svg{position:absolute;left:11px;top:9px;width:15px;height:15px;color:var(--fa)}.srch .inp{padding-left:34px;width:260px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px;animation:in .3s both}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.ch h3{font-size:14px;font-weight:600;letter-spacing:-.01em}.ch span{color:var(--mu);font-size:12px}
+.cb{padding:18px}
+.kpis{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-bottom:14px}
+.kpis .card{margin:0;padding:16px 18px}
+.kl{color:var(--mu);font-size:12.5px;font-weight:500;display:flex;gap:7px;align-items:center}
+.kv1{font-size:27px;font-weight:600;letter-spacing:-.03em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.ks{color:var(--mu);font-size:12.5px}
+.warn .kv1{color:var(--warn)}.err .kv1{color:var(--err)}.ok .kv1{color:var(--ok)}
+.meter{height:5px;background:var(--line);border-radius:9px;margin-top:12px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ac);border-radius:9px;animation:grow .8s both;transform-origin:left}
+.meter.ok i{background:var(--ok)}.meter.warn i{background:var(--warn)}.meter.err i{background:var(--err)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:500;background:rgba(255,255,255,.06);color:var(--mu);white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{color:var(--ok);background:rgba(61,187,140,.12)}.pill.warn{color:var(--warn);background:rgba(227,164,63,.12)}
+.pill.err{color:var(--err);background:rgba(229,96,79,.13)}.pill.info{color:var(--info);background:rgba(124,147,245,.13)}
+.tag{display:inline-block;padding:1px 8px;border-radius:6px;background:rgba(255,255,255,.06);color:var(--mu);font-size:12px;white-space:nowrap}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:12px;font-weight:500;color:var(--mu);padding:10px 18px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--panel2)}
+.tbl td{padding:12px 18px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+.tbl tbody tr:last-child td{border-bottom:0}.tbl tbody tr{transition:background .12s}.tbl tbody tr:hover{background:rgba(255,255,255,.025)}
+.tbl .r{text-align:right;font-variant-numeric:tabular-nums}.tbl .nw{white-space:nowrap}
+.m{font-weight:500}.s{display:block;color:var(--mu);font-size:12px;font-weight:400}.mono{font-family:var(--mono);font-size:12px;color:var(--mu)}
+.errtx{display:block;margin-top:4px;color:#f0a79d;font-size:12px;word-break:break-word}
+.share{display:flex;align-items:center;gap:10px;min-width:150px}.share .meter{flex:1;margin:0}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tab{padding:9px 14px;color:var(--mu);border:0;border-bottom:2px solid transparent;background:none;margin-bottom:-1px;font:inherit;font-weight:500;cursor:pointer;transition:color .15s}
+.tab:hover{color:var(--tx)}.tab.on{color:var(--tx);border-bottom-color:var(--ac)}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:2px}
+.seg button{border:0;background:none;color:var(--mu);padding:5px 12px;border-radius:6px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;height:28px}
+.seg button:hover{color:var(--tx)}.seg button.on{background:var(--line2);color:var(--tx)}
+.fl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.cnt{color:var(--mu);font-size:12.5px}
+.chip{cursor:pointer;padding:4px 12px;border-radius:99px;border:1px solid var(--line2);background:none;color:var(--mu);font:inherit;font-size:12.5px;transition:.15s}
+.chip:hover{color:var(--tx)}.chip.on{background:var(--acs);border-color:rgba(91,141,239,.45);color:#9db9f7}
+.two{display:grid;gap:14px;grid-template-columns:minmax(0,2fr) minmax(0,1fr);margin-bottom:0}.two .card{margin-bottom:14px}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.strip>div{padding:16px 18px;border-right:1px solid var(--line)}.strip>div:last-child{border:0}
+.chart{display:grid;grid-template-columns:46px minmax(0,1fr);column-gap:10px}
+.yax{height:176px;display:flex;flex-direction:column;justify-content:space-between;text-align:right;color:var(--fa);font-size:11px;font-variant-numeric:tabular-nums}
+.plot{position:relative;height:176px}
+.plot>i{position:absolute;left:0;right:0;border-top:1px dashed var(--line)}
+.cols{position:absolute;inset:0;display:flex;align-items:flex-end;gap:7px}
+.col{flex:1;height:100%;display:flex;align-items:flex-end;position:relative}
+.col b{display:block;width:100%;min-height:2px;background:var(--ac);opacity:.8;border-radius:3px 3px 0 0;transform-origin:bottom;animation:rise .6s both;transition:opacity .15s}
+.col:hover b{opacity:1}
+.col:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#232b39;border:1px solid var(--line2);padding:4px 9px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:3;pointer-events:none}
+.col.z b{background:var(--line2);opacity:1}
+.clk .col{cursor:pointer}.col.sel b{opacity:1;background:#8fb0f5}
+.xax{grid-column:2;display:flex;gap:7px;margin-top:8px}.xax span{flex:1;text-align:center;color:var(--fa);font-size:11px}
+.tlg{padding:8px 18px;background:var(--panel2);color:var(--mu);font-size:12px;font-weight:600;border-bottom:1px solid var(--line)}
+.ev{display:grid;grid-template-columns:48px 10px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 18px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s}
+.ev:hover{background:rgba(255,255,255,.025)}.ev:last-child{border-bottom:0}
+.ev .t{font:12px var(--mono);color:var(--fa);padding-top:1px}.ev .d{width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--fa)}
+.d.info{background:var(--info)}.d.warning{background:var(--warn)}.d.error,.d.critical{background:var(--err)}
+.ev .x{min-width:0}.ev .x b{font-weight:500;word-break:break-word}
+.ev pre{grid-column:3/-1;margin-top:8px;font:11.5px/1.5 var(--mono);background:#0b0e13;border:1px solid var(--line);padding:10px 12px;border-radius:8px;overflow:auto;color:#aeb8cc}
+.empty{padding:34px 18px;text-align:center;color:var(--mu)}
+.banner{display:flex;gap:14px;align-items:center;padding:16px 18px;border-radius:var(--r);border:1px solid var(--line);margin-bottom:14px;background:var(--panel)}
+.banner svg{width:26px;height:26px;flex:none}.banner b{display:block;font-size:15px;font-weight:600}
+.banner.ok{border-color:rgba(61,187,140,.4);background:rgba(61,187,140,.07)}.banner.ok svg{color:var(--ok)}
+.banner.err{border-color:rgba(229,96,79,.45);background:rgba(229,96,79,.08)}.banner.err svg{color:var(--err)}
+.vms{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));margin-bottom:14px}.vms .card{margin:0}
+.vh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 0}.vh b{font-size:15px;font-weight:600;display:block}
+.vb{display:grid;grid-template-columns:auto 1fr;gap:22px;padding:16px 18px 18px;align-items:center}
+.rings{display:flex;gap:18px}.ringw{text-align:center}.ringw small{display:block;margin-top:2px;color:var(--mu);font-size:12px}
+.ring{width:78px;height:78px;display:block}
+.ring circle{fill:none;stroke-width:6}.ring .rt{stroke:var(--line2)}
+.ring .rv{stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;animation:dash 1s both}
+.ring text{fill:var(--tx);font:600 16px system-ui,sans-serif}
+.ringnone{width:78px;height:78px;border-radius:50%;border:6px solid var(--line2);display:grid;place-items:center;color:var(--fa)}
+.kvs>div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:13px;border-bottom:1px dashed var(--line)}
+.kvs>div:last-child{border:0}.kvs span{color:var(--mu)}.kvs b{font-weight:500;font-variant-numeric:tabular-nums}
+.rec{margin:0 18px 18px;padding:12px 14px;border-radius:8px;background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.28);font-size:13px}
+.rec b{font-weight:600}.rec .good{color:var(--ok);font-weight:500}
+.note{color:var(--fa);font-size:12.5px;margin:2px 2px 16px}
+.sk{border-radius:var(--r);background:linear-gradient(90deg,var(--panel),var(--panel2),var(--panel));background-size:220%;animation:sh 1.2s infinite}
+#err{display:none;background:rgba(229,96,79,.1);border:1px solid rgba(229,96,79,.4);color:#f3b6ad;padding:10px 14px;border-radius:8px;margin-bottom:14px}
+@keyframes in{from{opacity:0;transform:translateY(6px)}}@keyframes grow{from{transform:scaleX(0)}}@keyframes rise{from{transform:scaleY(0)}}
+@keyframes dash{from{stroke-dashoffset:var(--c)}}@keyframes sh{to{background-position:-220%}}@keyframes rot{to{transform:rotate(360deg)}}
+@media(max-width:980px){.app{grid-template-columns:minmax(0,1fr)}aside{min-width:0}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line)}nav{order:3;flex:1 0 100%;display:flex;gap:4px;overflow-x:auto;margin-top:8px}nav a{white-space:nowrap;flex:none}.ng,.brand small,.me div{display:none}.brand{padding:0 8px}.me{border:0;margin:0 0 0 auto;padding:0}main{padding:18px}.two{grid-template-columns:1fr}.vb{grid-template-columns:1fr}.srch .inp{width:100%}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="brand"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#5b8def"/><path d="M9 21V15M16 21V10M23 21v-8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+    <div><b>Ops Center</b><small>Azure · read-only</small></div></div>
+  <nav id="nav"></nav>
+  <div class="me"><span class="av" id="av">·</span><div><b id="who">Signed in</b><a href="/.auth/logout">Sign out</a></div></div>
+</aside>
+<main>
+  <div class="ph"><div><h1 id="title"></h1><p id="sub"></p></div>
+    <div class="ctl"><span class="upd"><i></i><span id="upd"></span></span>
+      <button class="btn" id="refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>Refresh</button></div></div>
+  <div id="err"></div>
+  <div id="view"></div>
+</main>
+</div>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tidy = s => String(s ?? '').replace(/\/subscriptions\/\S+\//gi, '');   // show only the resource name, not the full Azure path
+const S = {cur: 'INR', page: 'overview', scope: 'project'};
+const money = (v, c, d = 0) => v == null ? '—' : new Intl.NumberFormat('en-IN', {style: 'currency', currency: c || S.cur || 'INR', maximumFractionDigits: d}).format(v);
+const ago = t => { if (!t) return '—'; const m = Math.round((Date.now() - new Date(t)) / 60000);
+  return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+const hm = t => new Date(t).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false});
+const when = t => new Date(t).toLocaleString([], {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+const dayName = t => { const d = new Date(t), n = new Date(), k = x => x.toDateString();
+  return k(d) === k(n) ? 'Today' : k(d) === k(new Date(n - 864e5)) ? 'Yesterday' : d.toLocaleDateString([], {weekday: 'short', day: 'numeric', month: 'short'}); };
+const tone = s => { s = String(s).toLowerCase();
+  if (['on-track', 'right-sized', 'resolved', 'succeeded', 'pass', 'ok'].includes(s)) return 'ok';
+  if (['at-risk', 'warning', 'over-provisioned'].includes(s)) return 'warn';
+  if (['over-budget', 'error', 'critical', 'high-utilization', 'fired', 'failed'].includes(s)) return 'err';
+  return s === 'info' ? 'info' : ''; };
+const pill = (text, t) => `<span class="pill ${t ?? tone(text)}">${esc(text)}</span>`;
+const I = {
+  overview: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  operations: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  performance: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
+  timeline: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  cost: '<path d="M6 3h12M6 8h12M6 13h3a5 5 0 0 0 5-5M9 13l8 8"/>',
+  rightsizing: '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>',
+  security: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  assistant: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14h4"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  alert: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>'
+};
+const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
+const kpi = (label, value, sub, t = '', extra = '') => `<div class="card ${t}"><div class="kl">${label}</div><div class="kv1">${value}</div><div class="ks">${sub ?? ''}</div>${extra}</div>`;
+const meter = (pct, t = '') => `<div class="meter ${t}"><i style="width:${Math.max(0, Math.min(pct || 0, 100))}%"></i></div>`;
+const card = (title, body, right = '', flush = true) => `<div class="card"><div class="ch"><h3>${title}</h3>${right ? `<span>${right}</span>` : ''}</div>${flush ? body : `<div class="cb">${body}</div>`}</div>`;
+const empty = msg => `<div class="card"><div class="empty">${esc(msg)}</div></div>`;
+const table = (heads, rows, right = []) => rows.length
+  ? `<div class="tw"><table class="tbl"><thead><tr>${heads.map((h, i) => `<th class="${right.includes(i) ? 'r' : ''}">${h}</th>`).join('')}</tr></thead><tbody>${
+      rows.map(r => `<tr>${r.map((c, i) => `<td class="${right.includes(i) ? 'r' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
+  : '<div class="empty">Nothing to show here.</div>';
+const nice = m => { const p = Math.pow(10, Math.floor(Math.log10(m || 1))); return Math.ceil(m / p * 2) / 2 * p || 1; };
+const chart = arr => {
+  if (!arr.length) return '<div class="empty">No data yet.</div>';
+  const top = nice(Math.max(...arr.map(x => x.cost), 1));
+  return `<div class="chart"><div class="yax"><span>${money(top, S.cur)}</span><span>${money(top / 2, S.cur)}</span><span>${money(0, S.cur)}</span></div>
+    <div class="plot"><i style="top:0"></i><i style="top:50%"></i><i style="bottom:0"></i><div class="cols">${arr.map((x, i) =>
+      `<div class="col ${x.cost <= 0 ? 'z' : ''}" data-day="${esc(x.day)}" data-tip="${esc(dayName(x.day + 'T12:00:00'))} · ${money(x.cost, S.cur, 2)}"><b style="height:${x.cost / top * 100}%;animation-delay:${i * 25}ms"></b></div>`).join('')}</div></div>
+    <div class="xax">${arr.map(x => `<span>${new Date(x.day + 'T12:00:00').getDate()}</span>`).join('')}</div></div>`;
+};
+const ring = (p, label) => {
+  if (p == null || isNaN(p)) return `<div class="ringw"><div class="ringnone">—</div><small>${label}</small></div>`;
+  const c = 2 * Math.PI * 34, o = c * (1 - Math.min(p, 100) / 100), col = p >= 85 ? 'var(--err)' : p >= 60 ? 'var(--warn)' : 'var(--ac)';
+  return `<div class="ringw"><svg class="ring" viewBox="0 0 80 80"><circle class="rt" cx="40" cy="40" r="34"/><circle class="rv" cx="40" cy="40" r="34" style="stroke:${col};stroke-dasharray:${c};stroke-dashoffset:${o};--c:${c}"/><text x="40" y="45" text-anchor="middle">${p < 10 ? p.toFixed(1) : p.toFixed(0)}%</text></svg><small>${label}</small></div>`;
+};
+const events = list => {
+  if (!list.length) return '<div class="empty">No events in this view.</div>';
+  let last = '';
+  return list.map((e, i) => { const g = dayName(e.timestamp), head = g !== last ? `<div class="tlg">${g}</div>` : ''; last = g;
+    return `${head}<div class="ev" data-i="${i}"><span class="t">${hm(e.timestamp)}</span><i class="d ${esc(e.severity)}"></i>
+      <div class="x"><b>${esc(tidy(e.title))}</b><span class="s">${esc(e.resourceName || e.source)}${e.resourceGroup ? ' · ' + esc(e.resourceGroup) : ''}</span></div>
+      <span class="tag">${esc(e.eventType)}</span><pre hidden>${esc(JSON.stringify(e.details || {}, null, 2))}</pre></div>`; }).join('');
+};
+async function api(path, payload) {
+  const r = await fetch('/api/' + path, payload === undefined ? {headers: {Accept: 'application/json'}}
+    : {method: 'POST', headers: {Accept: 'application/json', 'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+  const json = (r.headers.get('content-type') || '').includes('json');
+  if (r.status === 401 || r.status === 403 || (r.ok && !json)) {   // signed out, or the login page came back instead of data
+    if (r.status === 403) throw new Error('Signed in, but this account has no access. Ask the owner for the ops role.');
+    location.href = '/.auth/login/aad?post_login_redirect_uri=' + encodeURIComponent(location.pathname + location.hash);
+    throw new Error('Redirecting to sign-in');
+  }
+  const body = json ? await r.json() : {};
+  if (!r.ok) throw new Error(body.message || r.statusText);
+  return body;
+}
+const stamp = iso => { $('#upd').textContent = iso ? 'Data updated ' + ago(iso) : 'Live'; };
+
+const dayCard = (perDay, day) => {
+  const x = (perDay || {})[day];
+  if (!x) return card('Cost by resource', '<div class="empty">Click a bar in the daily chart.</div>');
+  const max = Math.max(...x.items.map(i => i.cost), 1);
+  const label = new Date(day + 'T12:00:00').toLocaleDateString([], {weekday: 'short', day: 'numeric', month: 'short'});
+  return card('Cost on ' + label, table(['Resource', 'Resource group', 'Share of the day', 'Cost'], x.items.map(i => [
+    `<span class="m">${esc(i.name)}</span>${i.type ? `<span class="s">${esc(i.type)}</span>` : ''}`, `<span class="mono">${esc(i.resourceGroup)}</span>`,
+    `<div class="share">${meter(i.cost / max * 100)}</div>`, `<span class="m">${money(i.cost, S.cur, 2)}</span>`]), [3]) +
+    (x.others > 0 ? `<p class="note" style="padding:0 18px 14px">Plus ${money(x.others, S.cur, 2)} from smaller resources</p>` : ''),
+    'day total ' + money(x.total, S.cur, 2));
+};
+const costFilter = d => {
+  const mine = (d.allGroups || []).filter(g => /(^|[-_])cop([-_]|$)/i.test(g)), on = S.costGroups || [];
+  if (!mine.length) return '';
+  return `<div class="row2"><div class="fl"><span class="cnt">Resource group</span>
+    <button class="chip ${on.length ? '' : 'on'}" data-cg="">Whole subscription</button>
+    ${mine.map(g => `<button class="chip ${on.includes(g) ? 'on' : ''}" data-cg="${esc(g)}">${esc(g)}</button>`).join('')}</div></div>`;
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-cg]'); if (!b) return;
+  const g = b.dataset.cg, cur = S.costGroups || [];
+  S.costGroups = !g ? [] : cur.includes(g) ? cur.filter(x => x !== g) : [...cur, g];
+  S.costDay = null; show('cost', true);
+});
+const markDay = () => document.querySelectorAll('.clk .col').forEach(c => c.classList.toggle('sel', c.dataset.day === S.costDay));
+const P = {
+  overview: {title: 'Overview', sub: 'The state of your Azure subscription at a glance', async load() {
+    const [d, br] = await Promise.all([api('overview'), api('briefing').catch(() => null)]); S.cur = d.currency || S.cur;
+    const f = d.forecast, v = d.vms, s = d.security, w = d.waste, ft = f ? tone(f.status) : '';
+    $('#view').innerHTML = `
+    <div class="kpis">
+      ${kpi('Resources', d.inventory ? d.inventory.count : '—', d.inventory ? Object.keys(d.inventory.byType).length + ' resource types' : 'No data yet')}
+      ${kpi('Cost · last 30 days', d.cost ? money(d.cost.totalCost30d, S.cur) : '—', 'whole subscription')}
+      ${f ? kpi('Forecast · month end', money(f.forecastMonthEnd, S.cur), `${pill(f.status)} <span style="margin-left:6px">${f.percentOfBudget ?? '—'}% of ${money(f.budget, S.cur)}</span>`, '', meter(f.percentOfBudget, ft)) : kpi('Forecast · month end', '—', 'No data yet')}
+      ${kpi('Alerts firing', d.alerts.fired, `${d.alerts.resolved} resolved · last 30 days`, d.alerts.fired ? 'warn' : 'ok')}
+    </div>
+    <div class="card strip">
+      <div><div class="kl">Right-sizing</div><div class="kv1">${v ? v.overProvisioned : '—'}</div><div class="ks">${v ? `over-provisioned of ${v.total} VMs · save ~${money(v.potentialMonthlySaving, S.cur)}/mo` : 'No data yet'}</div></div>
+      <div><div class="kl">Security findings</div><div class="kv1 ${s && !s.count ? 'ok' : ''}">${s ? s.count : '—'}</div><div class="ks">${s ? (s.count ? Object.entries(s.bySeverity).map(([k, n]) => `${n} ${k}`).join(' · ') : 'all checks passing') : 'No data yet'}</div></div>
+      <div><div class="kl">Waste items</div><div class="kv1">${w ? w.count : '—'}</div><div class="ks">${w ? 'idle or unattached resources' : 'No data yet'}</div></div>
+    </div>
+    <div class="two">
+      ${card('Daily cost', chart(d.cost ? d.cost.daily : []), 'last 14 days', false)}
+      ${card('Latest alerts', d.alerts.latest.length ? `<div class="tw"><table class="tbl"><tbody>${d.alerts.latest.map(a => `<tr><td><span class="m">${esc(tidy(a.alertRule))}</span><span class="s">${esc(a.resourceName)} · ${ago(a.startTime)}</span></td><td class="r">${pill(a.monitorCondition)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No alerts.</div>')}
+    </div>
+    ${card('Recent activity', events(d.recentEvents), '<a href="#timeline" style="color:var(--ac);text-decoration:none">View timeline →</a>')}`;
+    if (UI.briefing) UI.briefing(br);
+    stamp(d.freshness.cost || d.freshness.inventory);
+  }},
+
+  cost: {title: 'Cost', sub: 'Spend, forecast and budget for the subscription', async load() {
+    const d = await api('cost' + (S.costGroups && S.costGroups.length ? '?groups=' + encodeURIComponent(S.costGroups.join(',')) : ''));
+    if (!d.available) { $('#view').innerHTML = empty(d.message); return; }
+    S.cur = d.currency || S.cur; S.costData = d;
+    if (!d.perDay || !d.perDay[S.costDay]) S.costDay = (d.daily[d.daily.length - 1] || {}).day;
+    const f = d.filtered ? null : d.forecast, top = d.topResources, max = Math.max(...top.map(r => r.total), 1), gMax = Math.max(...d.byResourceGroup.map(g => g.cost), 1);
+    $('#view').innerHTML = `
+    <div class="kpis">
+      ${kpi('Total · last 30 days', money(d.totalCost, S.cur), d.resourceCount + ' billed resources')}
+      ${(() => { const b = d.filtered && d.forecast && d.forecast.budget && d.forecast.budget.amount; if (!b) return '';
+        const m = new Date().toISOString().slice(0, 7), mtd = d.daily.filter(x => x.day.slice(0, 7) === m).reduce((a, x) => a + x.cost, 0), p = mtd / b * 100;
+        return kpi('Project share of budget', p.toFixed(1) + '%', `${money(mtd, S.cur)} this month of ${money(b, S.cur)} (whole subscription budget)`, '', meter(p, p >= 80 ? 'warn' : 'ok')); })()}
+      ${f ? kpi('Forecast · month end', money(f.forecastMonthEnd, S.cur), `range ${money(f.forecastLow, S.cur)} – ${money(f.forecastHigh, S.cur)}`) : ''}
+      ${f ? kpi('Budget used (forecast)', (f.percentOfBudget ?? '—') + '%', `${pill(f.status)} <span style="margin-left:6px">confidence ${esc(f.confidence)}</span>`, '', meter(f.percentOfBudget, tone(f.status))) : ''}
+      ${f ? kpi('Daily run rate', money(f.dailyRunRate, S.cur, 2), `${f.daysRemaining} days left this month`) : ''}
+    </div>
+    <div class="two">
+      ${card('Daily cost', '<div class="clk">' + chart(d.daily.slice(-30)) + '</div>', 'click a bar for that day', false)}
+      ${card('By resource group', d.byResourceGroup.map(g => `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between"><span>${esc(g.name)}</span><b style="font-weight:500">${money(g.cost, S.cur)}</b></div>${meter(g.cost / gMax * 100)}</div>`).join(''), '', false)}
+    </div>
+    <div id="dayBox">${dayCard(d.perDay, S.costDay)}</div>
+    ${card('Top resources', table(['Resource', 'Resource group', 'Share of top resources', 'Cost'], top.map(r => [
+      `<span class="m">${esc(r.name)}</span>${r.type ? `<span class="s">${esc(r.type)}</span>` : ''}`, `<span class="mono">${esc(r.resourceGroup)}</span>`,
+      `<div class="share">${meter(r.total / max * 100)}</div>`, `<span class="m">${money(r.total, S.cur, 2)}</span>`]), [3]))}`;
+    markDay(); stamp(d.timestamp); $('#view').insertAdjacentHTML('afterbegin', costFilter(d));
+  }},
+
+  timeline: {title: 'Timeline', sub: 'Changes, deployments, alerts, cost and security events in one place', q: {days: 7, type: '', severity: '', search: ''}, async load() {
+    const q = this.q;
+    if (!$('#tl')) $('#view').innerHTML = `
+      <div class="row2"><div class="fl"><select class="inp" id="tDays">${[1, 3, 7, 14, 30].map(n => `<option value="${n}" ${n === q.days ? 'selected' : ''}>Last ${n} day${n > 1 ? 's' : ''}</option>`).join('')}</select>
+        <select class="inp" id="tSev"><option value="">All severities</option>${['info', 'warning', 'error', 'critical'].map(s => `<option ${s === q.severity ? 'selected' : ''}>${s}</option>`).join('')}</select>
+        <div class="srch">${icon('search')}<input class="inp" id="tSearch" placeholder="Search events or resources" value="${esc(q.search)}"></div></div><span class="cnt" id="tCount"></span></div>
+      <div class="fl" id="tTypes" style="margin-bottom:14px"></div><div class="card" id="tl"></div>`;
+    const p = new URLSearchParams({days: q.days, limit: 300});
+    if (q.type) p.set('type', q.type); if (q.severity) p.set('severity', q.severity); if (q.search) p.set('search', q.search);
+    const d = await api('timeline?' + p);
+    $('#tTypes').innerHTML = `<button class="chip ${q.type ? '' : 'on'}" data-t="">All</button>` + Object.entries(d.facets.types).map(([t, n]) => `<button class="chip ${q.type === t ? 'on' : ''}" data-t="${esc(t)}">${esc(t)} · ${n}</button>`).join('');
+    $('#tl').innerHTML = events(d.events);
+    $('#tCount').textContent = `${d.total} event${d.total === 1 ? '' : 's'}${d.truncated ? ' · showing newest ' + d.returned : ''}`;
+    stamp(d.events[0] && d.events[0].timestamp);
+  }}
+};
+
+const NAV = [['Monitor', ['overview', 'assistant', 'operations', 'performance', 'timeline']], ['Optimize', ['cost', 'rightsizing']], ['Protect', ['security']]];
+let busy = false;
+async function show(name, quiet) {
+  if (!P[name]) name = 'overview';
+  S.page = name;
+  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.p === name));
+  $('#title').textContent = P[name].title; $('#sub').textContent = P[name].sub || ''; $('#err').style.display = 'none';
+  if (!quiet && !(name === 'timeline' && $('#tl'))) $('#view').innerHTML = '<div class="kpis"><div class="sk" style="height:104px"></div><div class="sk" style="height:104px"></div><div class="sk" style="height:104px"></div><div class="sk" style="height:104px"></div></div><div class="sk" style="height:260px"></div>';
+  if (busy) return; busy = true; $('#refresh').classList.add('spin');
+  try { await P[name].load(); }
+  catch (e) { $('#err').textContent = 'Could not load data: ' + e.message; $('#err').style.display = 'block'; }
+  finally { busy = false; $('#refresh').classList.remove('spin'); }
+}
+const route = () => show((location.hash || '#overview').slice(1));
+window.UI = {$, esc, tidy, S, money, ago, when, hm, dayName, tone, pill, icon, kpi, meter, card, empty, table, chart, ring, events, api, stamp, show,
+  register(panels) { Object.assign(P, panels); },
+  boot() {
+    $('#nav').innerHTML = NAV.map(([g, ids]) => `<div class="ng">${g}</div>` + ids.filter(id => P[id]).map(id => `<a href="#${id}" data-p="${id}">${icon(id)}${P[id].title}</a>`).join('')).join('');
+    addEventListener('hashchange', () => { const t = $('#tl'); if (t) t.remove(); route(); });
+    $('#refresh').onclick = () => show(S.page, true);
+    setInterval(() => { if (!document.hidden && S.page !== 'timeline') show(S.page, true); }, 60000);
+    fetch('/.auth/me').then(r => r.json()).then(j => { const u = (j.clientPrincipal || {}).userDetails || ''; if (u) { $('#who').textContent = u; $('#av').textContent = u[0].toUpperCase(); } }).catch(() => {});
+    route();
+  }
+};
+document.addEventListener('click', e => {
+  const ev = e.target.closest('.ev'); if (ev) { const pre = ev.querySelector('pre'); pre.hidden = !pre.hidden; return; }
+  const chip = e.target.closest('#tTypes .chip'); if (chip) { P.timeline.q.type = chip.dataset.t; show('timeline', true); }
+});
+document.addEventListener('change', e => {
+  const q = P.timeline.q;
+  if (e.target.id === 'tDays') q.days = +e.target.value; else if (e.target.id === 'tSev') q.severity = e.target.value; else return;
+  show('timeline', true);
+});
+document.addEventListener('click', e => {
+  const c = e.target.closest('.clk .col'), box = $('#dayBox');
+  if (!c || !c.dataset.day || !box || !S.costData) return;
+  S.costDay = c.dataset.day; box.innerHTML = dayCard(S.costData.perDay, S.costDay); markDay();
+});
+let t; document.addEventListener('input', e => { if (e.target.id !== 'tSearch') return;
+  clearTimeout(t); t = setTimeout(() => { P.timeline.q.search = e.target.value.trim(); show('timeline', true); }, 350); });
+})();
+</script>
+<script src="panels.js"></script>
+<script src="assistant.js"></script>
+<script>UI.boot();</script>
+</body>
+</html>
